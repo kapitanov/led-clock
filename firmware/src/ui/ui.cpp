@@ -178,12 +178,13 @@ void ui::draw_time()
 
         ui::LedMatrix.clear();
         ui::LedMatrix.text(buff, FONT_MONOSPACE);
-        ui::LedMatrix.sync(TRANSITION_FADE_DOWN, ui::anim_step);
+        ui::LedMatrix.sync(TRANSITION_SCROLL_UP, ui::anim_step);
 
         ui::anim_step++;
         if (ui::anim_step > 8)
         {
             ui::needs_update = false;
+            ui::LedMatrix.swap();
         }
         else
         {
@@ -209,12 +210,13 @@ void ui::draw_weather()
 
         ui::LedMatrix.clear();
         ui::LedMatrix.text(buff);
-        ui::LedMatrix.sync(TRANSITION_FADE_DOWN, ui::anim_step);
+        ui::LedMatrix.sync(TRANSITION_SCROLL_DOWN, ui::anim_step);
 
         ui::anim_step++;
         if (ui::anim_step > 8)
         {
             ui::needs_update = false;
+            ui::LedMatrix.swap();
         }
         else
         {

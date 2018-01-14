@@ -87,7 +87,6 @@ void led_matrix_t::text(const char *str, font_id font, int x, int y)
 
 void led_matrix_t::clear()
 {
-    swap();
     for (int i = 0; i < _count * 8; i++)
     {
         _back_buffer[i] = 0;
@@ -123,21 +122,41 @@ void led_matrix_t::sync(transition_type type, int step)
     {
         digitalWrite(_pin_cs, LOW);
 
-        byte *buffer;
-        switch (type)
-        {
-        case TRANSITION_FADE_UP:
-            buffer = y > step ? _front_buffer : _back_buffer;
-            break;
-        default:
-            buffer = (7 - y) > step ? _front_buffer : _back_buffer;
-            break;
-        }
-
         for (int addr = 0; addr < _count; addr++)
         {
+            int row;
+            byte *buffer;
+
+            switch (type)
+            {
+            case TRANSITION_FADE_UP:
+            case TRANSITION_FADE_DOWN:
+                row = y;
+                buffer = y > step ? _front_buffer : _back_buffer;
+                break;
+
+            case TRANSITION_SCROLL_UP:
+                buffer = 8 - y > step ? _front_buffer : _back_buffer;
+                row = 8 - y > step ? y + step : y + step - 8;
+                //var buffer = 8-y > step ? "FRONT" : "BACK";
+                //var offset = 8-y > step ? y + step: y + step - 8;
+                break;
+
+            case TRANSITION_SCROLL_DOWN:
+                buffer = y >= step ? _front_buffer : _back_buffer;
+                row = y >= step ? y - step : 8 - step + y;
+                //var buffer = y >= step ? "FRONT" : "BACK";
+                //var offset = y >= step ? y - step : 8 - step + y;
+                break;
+
+            default:
+                row = y;
+                buffer = _back_buffer;
+                break;
+            }
+
             shiftOut(_pin_din, _pin_clk, MSBFIRST, y + 1);
-            shiftOut(_pin_din, _pin_clk, MSBFIRST, buffer[y * _count + addr]);
+            shiftOut(_pin_din, _pin_clk, MSBFIRST, buffer[row * _count + addr]);
         }
 
         digitalWrite(_pin_cs, HIGH);

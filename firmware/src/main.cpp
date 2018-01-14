@@ -11,7 +11,7 @@ class event_handler : public mqtt_event_handler
   private:
     bool _has_time;
     bool _has_weather;
-    bool _can_cycle;
+    bool _can_cycle = true;
 
   public:
     virtual void on_time(int h, int m)

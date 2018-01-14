@@ -14,6 +14,8 @@ static const char FONT_SPECIAL_BAR = '1';
 enum transition_type {
     TRANSITION_FADE_UP,
     TRANSITION_FADE_DOWN,
+    TRANSITION_SCROLL_UP,
+    TRANSITION_SCROLL_DOWN,
 };
 
 class led_matrix_t
