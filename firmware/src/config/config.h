@@ -11,7 +11,8 @@
 #define CONFIG_BUTTON_INVERT        true
 #define CONFIG_BUTTON_DEBOUNCE_MS   20
 
-#define MQTT_CLIENT "led_informer_esp8266"
+#define MQTT_CLIENT "led_informer_esp8266_%X"
+#define MQTT_PORT 1883
 
 #define MQTT_REQUEST_TIME_TOPIC    "/time/request"
 #define MQTT_REQUEST_WEATHER_TOPIC "/weather/request"

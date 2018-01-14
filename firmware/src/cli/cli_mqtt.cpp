@@ -15,36 +15,6 @@ void cmd_mqtt_status()
     printf(F("Username:    \"%s\"\r\n"), mqtt_get_username());
     printf(F("Password:    \"%s\"\r\n"), mqtt_get_password());
     printf(F("IsConnected: %s\r\n"), mqtt_is_connected() ? "YES" : "NO");
-
-    printf(F("IsConnected: "));
-    switch (mqtt_get_state())
-    {
-    case MQTT_INIT:
-        println(F("INIT"));
-        break;
-    case MQTT_RECONNECT:
-        println(F("RECONNECT"));
-        break;
-    case MQTT_CONNECT:
-        println(F("CONNECT"));
-        break;
-    case MQTT_DISCONNECTED:
-        println(F("DISCONNECTED"));
-        break;
-    case MQTT_RUNNING:
-        println(F("RUNNING"));
-        break;
-    case MQTT_CONNECTED:
-        println(F("CONNECTED"));
-        break;
-    case MQTT_WAIT:
-        println(F("WAIT"));
-        break;
-
-    default:
-        println(F("?"));
-        break;
-    }
 }
 
 void cmd_mqtt_connect(const String &args)

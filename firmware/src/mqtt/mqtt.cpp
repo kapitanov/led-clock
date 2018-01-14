@@ -8,22 +8,82 @@ using namespace mqtt;
 using namespace os;
 
 WiFiClient mqtt::_wifi_client;
-MQTTClient mqtt::_mqtt;
+AsyncMqttClient mqtt::_mqtt;
+bool mqtt::_tryConnect = true;
 
 StaticJsonBuffer<512> mqtt::_json_buffer;
 mqtt_event_handler *mqtt::_handler;
-thread_id mqtt::_thread_id;
 
 config_t mqtt::_config;
-mqtt_state_t mqtt::_state;
 
-void mqtt::on_message(String &topic, String &payload)
+void mqtt_on_connect(bool sessionPresent)
 {
     {
         lock lock;
-        printf(F("mqtt: <<< [%s] "), topic.c_str());
+        attr(GREEN);
+        print(F("mqtt: connected"));
+        attr(RESET);
+        println();
+    }
+
+    _mqtt.subscribe(MQTT_TIME_TOPIC, 0);
+    _mqtt.subscribe(MQTT_WEATHER_TOPIC, 0);
+
+    char payload[] = "REQ";
+    _mqtt.publish(MQTT_REQUEST_TIME_TOPIC, 0, false, payload);
+    _mqtt.publish(MQTT_REQUEST_WEATHER_TOPIC, 0, false, payload);
+}
+
+const char *mqtt_disconnect_reason(AsyncMqttClientDisconnectReason reason)
+{
+    switch (reason)
+    {
+    case AsyncMqttClientDisconnectReason::TCP_DISCONNECTED:
+        return "TCP_DISCONNECTED";
+    case AsyncMqttClientDisconnectReason::MQTT_UNACCEPTABLE_PROTOCOL_VERSION:
+        return "MQTT_UNACCEPTABLE_PROTOCOL_VERSION";
+    case AsyncMqttClientDisconnectReason::MQTT_IDENTIFIER_REJECTED:
+        return "MQTT_IDENTIFIER_REJECTED";
+    case AsyncMqttClientDisconnectReason::MQTT_SERVER_UNAVAILABLE:
+        return "MQTT_SERVER_UNAVAILABLE";
+    case AsyncMqttClientDisconnectReason::MQTT_MALFORMED_CREDENTIALS:
+        return "MQTT_MALFORMED_CREDENTIALS";
+    case AsyncMqttClientDisconnectReason::MQTT_NOT_AUTHORIZED:
+        return "MQTT_NOT_AUTHORIZED";
+    case AsyncMqttClientDisconnectReason::ESP8266_NOT_ENOUGH_SPACE:
+        return "ESP8266_NOT_ENOUGH_SPACE";
+    case AsyncMqttClientDisconnectReason::TLS_BAD_FINGERPRINT:
+        return "TLS_BAD_FINGERPRINT";
+    default:
+        return "?";
+    }
+}
+
+void mqtt_on_disconnect(AsyncMqttClientDisconnectReason reason)
+{
+    {
+        lock lock;
+        attr(RED);
+        printf(F("mqtt: failed to connect to \"%s\": %s"), _config.host, mqtt_disconnect_reason(reason));
+        attr(RESET);
+        println();
+    }
+
+    mqtt::_handler->on_error();
+
+    set_delay(1000);
+    _tryConnect = true;
+}
+
+void mqtt_on_message(char *topic, char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total)
+{
+    String topicStr(topic);
+    String payloadStr(payload);
+    {
+        lock lock;
+        printf(F("mqtt: <<< [%s] "), topic);
         attr(INVERSE);
-        print(payload.c_str());
+        print(payload);
         attr(RESET);
         println();
     }
@@ -31,14 +91,61 @@ void mqtt::on_message(String &topic, String &payload)
     _json_buffer.clear();
     JsonObject &json = _json_buffer.parseObject(payload);
 
-    if (topic.equals(MQTT_TIME_TOPIC))
+    if (topicStr.equals(MQTT_TIME_TOPIC))
     {
         _handler->on_time(json.get<int>("h"), json.get<int>("m"));
     }
-    else if (topic.equals(MQTT_WEATHER_TOPIC))
+    else if (topicStr.equals(MQTT_WEATHER_TOPIC))
     {
         _handler->on_weather(json.get<float>("now"));
     }
+}
+
+void mqtt_connect()
+{
+    _tryConnect = false;
+
+    if (strlen(_config.host) <= 0)
+    {
+        lock locker;
+        attr(RED);
+        println(F("MQTT connection is not configured"));
+        attr(RESET);
+
+        mqtt::_handler->on_error();
+        return;
+    }
+
+    char clientId[64] = "";
+    sprintf(clientId, MQTT_CLIENT, ESP.getChipId());
+
+    printf(F("mqtt: connecting to \"%s\" as \"%s\:%s\" as \"%s\"\r\n"), _config.host, _config.username, _config.password, clientId);
+
+    _mqtt.setClientId(clientId);
+    _mqtt.setServer(_config.host, MQTT_PORT);
+    _mqtt.setCredentials(_config.username, _config.password);
+
+    _mqtt.connect();
+}
+
+void mqtt_loop()
+{
+    if (!_tryConnect)
+    {
+        return;
+    }
+
+    if (!WiFi.isConnected())
+    {
+        return;
+    }
+
+    if (_mqtt.connected())
+    {
+        return;
+    }
+
+    mqtt_connect();
 }
 
 void mqtt_init(mqtt_event_handler &handler)
@@ -46,18 +153,16 @@ void mqtt_init(mqtt_event_handler &handler)
     _handler = &handler;
     cfg_read();
 
-    _thread_id = create_thread(fsm_init, "mqtt");
-    _state = MQTT_INIT;
+    _mqtt.onConnect(mqtt_on_connect);
+    _mqtt.onDisconnect(mqtt_on_disconnect);
+    _mqtt.onMessage(mqtt_on_message);
+
+    create_thread(mqtt_loop, "mqtt");
 }
 
 bool mqtt_is_connected()
 {
     return _mqtt.connected();
-}
-
-mqtt_state_t mqtt_get_state()
-{
-    return _state;
 }
 
 const char *mqtt_get_hostname()
@@ -83,7 +188,7 @@ void mqtt_connect(const String &host, const String &username, const String &pass
 
     cfg_write();
 
-    set_state(MQTT_RECONNECT);
+    _tryConnect = true;
 }
 
 void mqtt_reset()
@@ -94,7 +199,8 @@ void mqtt_reset()
 
     cfg_write();
 
-    set_state(MQTT_RECONNECT);
+    _mqtt.disconnect();
+    _tryConnect = true;
 }
 
 void mqtt::cfg_read()
@@ -166,35 +272,4 @@ uint32_t mqtt::crc(const uint8_t *buffer, size_t length)
     }
 
     return crc.finalize();
-}
-
-void mqtt::set_state(mqtt_state_t state)
-{
-    switch (state)
-    {
-    case MQTT_INIT:
-        set_func(_thread_id, fsm_init, "init");
-        break;
-    case MQTT_CONNECT:
-        set_func(_thread_id, fsm_connect, "connect");
-        break;
-    case MQTT_RECONNECT:
-        set_func(_thread_id, fsm_reconnect, "reconnect");
-        break;
-    case MQTT_DISCONNECTED:
-        set_func(_thread_id, fsm_disconnected, "disconnected");
-        break;
-    case MQTT_RUNNING:
-        set_func(_thread_id, fsm_loop, "loop");
-        break;
-    case MQTT_CONNECTED:
-        set_func(_thread_id, fsm_connected, "connected");
-        break;
-    case MQTT_WAIT:
-        set_func(_thread_id, fsm_wait_connect, "wait_connect");
-        break;
-    default:
-        return;
-    }
-    _state = state;
 }

@@ -155,6 +155,9 @@ void os::printf(const char *format, ...)
     {
         _print(buffer[i]);
     }
+
+    Serial.flush();
+
     if (buffer != temp)
     {
         delete[] buffer;
@@ -187,6 +190,8 @@ void os::printf(const __FlashStringHelper *format, ...)
     {
         _print(buffer[i]);
     }
+    Serial.flush();
+    
     if (buffer != temp)
     {
         delete[] buffer;

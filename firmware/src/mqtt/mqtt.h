@@ -3,17 +3,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-enum mqtt_state_t
-{
-    MQTT_INIT,
-    MQTT_RECONNECT,
-    MQTT_CONNECT,
-    MQTT_DISCONNECTED,
-    MQTT_RUNNING,
-    MQTT_CONNECTED,
-    MQTT_WAIT
-};
-
 class mqtt_event_handler
 {
   public:
@@ -27,6 +16,5 @@ bool mqtt_is_connected();
 const char *mqtt_get_hostname();
 const char *mqtt_get_username();
 const char *mqtt_get_password();
-mqtt_state_t mqtt_get_state();
 void mqtt_connect(const String &host, const String &username, const String &password);
 void mqtt_reset();
