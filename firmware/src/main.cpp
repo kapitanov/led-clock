@@ -47,12 +47,7 @@ class event_handler : public mqtt_event_handler
         {
         case BTN_CLICK:
             os::logf(F("Button pressed"));
-            if (toggle_mode())
-            {
-                ui_blink();
-                _can_cycle = !_can_cycle;
-            }
-            else
+            if (!toggle_mode())
             {
                 ui_set_mode(ui_get_mode());
             }            

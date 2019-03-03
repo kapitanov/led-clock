@@ -12,6 +12,7 @@ static const char FONT_SPECIAL_LINE = '0';
 static const char FONT_SPECIAL_BAR = '1';
 
 enum transition_type {
+    TRANSITION_NONE,
     TRANSITION_FADE_UP,
     TRANSITION_FADE_DOWN,
     TRANSITION_SCROLL_UP,
@@ -48,9 +49,13 @@ private:
 
     byte* _front_buffer;
     byte* _back_buffer;
+    byte* _render_buffer;
 
     void _set_scan_limit(int addr, int limit);
+    bool _get_render_buffer(int x, int y);
+    void _set_render_buffer(int x, int y, boolean state);
     void _shutdown(bool value);
     void _spi_transfer(byte opcode, byte data);
     void _spi_transfer(int addr, byte opcode, byte data);
+    void _transition(transition_type type, int step);
 };

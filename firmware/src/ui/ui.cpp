@@ -26,6 +26,7 @@ void thread_func();
 void draw_preloader();
 void draw_time();
 void draw_weather();
+void print_buffers();
 } // namespace ui
 
 void ui_init()
@@ -40,6 +41,7 @@ void ui_init()
     ui::LedMatrix.intensity(1);
     ui::LedMatrix.clear();
     ui::LedMatrix.sync();
+    ui::LedMatrix.swap();
 }
 
 ui_mode ui_get_mode()
@@ -49,7 +51,7 @@ ui_mode ui_get_mode()
 
 void ui_set_mode(ui_mode mode)
 {
-    if(ui::mode == UI_LOADING && mode != UI_LOADING) 
+    if (ui::mode == UI_LOADING && mode != UI_LOADING)
     {
         os::logf(F("ui_set_mode(): clearing view"));
         ui::LedMatrix.clear();
@@ -58,18 +60,18 @@ void ui_set_mode(ui_mode mode)
     ui::needs_update = true;
     ui::anim_step = 0;
 
-    os::logf(F("ui_set_mode(): state: 0x02X, needs_update: %c, anim_step: %d"), mode, ui::needs_update ? 'Y' : 'N', ui::anim_step);
+    os::logf(F("ui_set_mode(): state: 0x%02X, needs_update: %c, anim_step: %d"), mode, ui::needs_update ? 'Y' : 'N', ui::anim_step);
 }
 
 void ui_set_time(int h, int m)
 {
     if (h != ui::hour || m != ui::minute)
     {
+        os::logf("Time updated to %02d:%02d", h, m);
+
         ui::hour = h;
         ui::minute = m;
         ui::needs_update = true;
-
-        os::logf("Time updated to %02d:%02d", h, m);
 
         int intensity = 7;
         if (h >= 20 || h < 6)
@@ -99,7 +101,6 @@ void ui_set_weather(float t)
     if (t != ui::temperature)
     {
         os::logf("Weather updated to %f", t);
-
         ui::temperature = t;
         ui::needs_update = true;
     }
@@ -109,9 +110,11 @@ void ui_blink()
 {
     ui::LedMatrix.fill();
     ui::LedMatrix.sync();
+    ui::LedMatrix.swap();
     delay(100);
     ui::LedMatrix.clear();
     ui::LedMatrix.sync();
+    ui::LedMatrix.swap();
     ui::needs_update = true;
 }
 
@@ -139,6 +142,7 @@ void ui::draw_preloader()
     ui::LedMatrix.clear();
     ui::LedMatrix.text(buff, FONT_SPECIAL, 13, 0);
     ui::LedMatrix.sync();
+    ui::LedMatrix.swap();
 
     ui::anim_step++;
     if (ui::anim_step > 4)
@@ -146,7 +150,6 @@ void ui::draw_preloader()
         ui::anim_step = 0;
     }
 
-    os::logf(F("ui_draw_preloader(): playing animation at %d/%d"), ui::anim_step, 4);
     os::set_delay(250);
 }
 
@@ -159,20 +162,18 @@ void ui::draw_time()
 
         ui::LedMatrix.clear();
         ui::LedMatrix.text(buff, FONT_MONOSPACE);
-        ui::LedMatrix.sync(TRANSITION_SCROLL_UP, ui::anim_step % MAX_ANIM_STEPS);
 
         ui::anim_step++;
-        if (ui::anim_step > MAX_ANIM_STEPS)
+        if (ui::anim_step >= MAX_ANIM_STEPS)
         {
-            os::logf(F("ui_draw_time(): animation completed at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
             ui::needs_update = false;
-            ui::LedMatrix.swap();
             ui::LedMatrix.sync();
+            ui::LedMatrix.swap();
             ui::anim_step = 0;
         }
         else
         {
-            os::logf(F("ui_draw_time(): playing animation at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
+            ui::LedMatrix.sync(TRANSITION_SCROLL_UP, ui::anim_step % MAX_ANIM_STEPS);
             os::set_delay(CONFIG_LED_ANIMATION_STEP);
         }
     }
@@ -195,32 +196,25 @@ void ui::draw_weather()
 
         ui::LedMatrix.clear();
         ui::LedMatrix.text(buff);
-        ui::LedMatrix.sync(TRANSITION_SCROLL_DOWN, ui::anim_step % MAX_ANIM_STEPS);
 
         ui::anim_step++;
-        if (ui::anim_step > MAX_ANIM_STEPS)
+        if (ui::anim_step >= MAX_ANIM_STEPS)
         {
-            os::logf(F("ui_draw_weather(): animation completed at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
             ui::needs_update = false;
-            ui::LedMatrix.swap();
             ui::LedMatrix.sync();
+            ui::LedMatrix.swap();
             ui::anim_step = 0;
         }
         else
         {
-            os::logf(F("ui_draw_weather(): playing animation at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
+            ui::LedMatrix.sync(TRANSITION_SCROLL_DOWN, ui::anim_step % MAX_ANIM_STEPS);
             os::set_delay(CONFIG_LED_ANIMATION_STEP);
         }
     }
 }
 
-void ui_print_state()
+void ui::print_buffers()
 {
-    os::println(F("Cuurent display state"));
-    os::println(F("====================="));
-    os::println();
-
-    os::println(F("Front buffer:"));
     for (int y = 0; y < ui::LedMatrix.height(); y++)
     {
         for (int x = 0; x < ui::LedMatrix.width(); x++)
@@ -234,13 +228,9 @@ void ui_print_state()
                 os::print('-');
             }
         }
-        os::println();
-    }
-    os::println();
 
-    os::println(F("Back buffer:"));
-    for (int y = 0; y < ui::LedMatrix.height(); y++)
-    {
+        os::print(F("    "));
+
         for (int x = 0; x < ui::LedMatrix.width(); x++)
         {
             if (ui::LedMatrix.get(x, y))
@@ -255,6 +245,16 @@ void ui_print_state()
         os::println();
     }
     os::println();
+}
+
+void ui_print_state()
+{
+    os::println(F("Cuurent display state"));
+    os::println(F("====================="));
+    os::println();
+
+    os::println(F("Front buffer                        Back buffer"));
+    ui::print_buffers();
 
     os::printf(F("mode:         0x%02X\r\n"), ui::mode);
     os::printf(F("hour:         %d\r\n"), ui::hour);
