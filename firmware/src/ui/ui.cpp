@@ -16,6 +16,8 @@ unsigned char anim_step;
 os::thread_id thread;
 bool should_blink;
 
+const int MAX_ANIM_STEPS = 8;
+
 int intensity;
 
 led_matrix_t LedMatrix(/* DIN */ CONFIG_LED_DIN, /* CS */ CONFIG_LED_CS, /* CLK */ CONFIG_LED_CLK, CONFIG_LED_COUNT);
@@ -24,7 +26,7 @@ void thread_func();
 void draw_preloader();
 void draw_time();
 void draw_weather();
-}
+} // namespace ui
 
 void ui_init()
 {
@@ -47,9 +49,16 @@ ui_mode ui_get_mode()
 
 void ui_set_mode(ui_mode mode)
 {
+    if(ui::mode == UI_LOADING && mode != UI_LOADING) 
+    {
+        os::logf(F("ui_set_mode(): clearing view"));
+        ui::LedMatrix.clear();
+    }
     ui::mode = mode;
     ui::needs_update = true;
     ui::anim_step = 0;
+
+    os::logf(F("ui_set_mode(): state: 0x02X, needs_update: %c, anim_step: %d"), mode, ui::needs_update ? 'Y' : 'N', ui::anim_step);
 }
 
 void ui_set_time(int h, int m)
@@ -60,7 +69,7 @@ void ui_set_time(int h, int m)
         ui::minute = m;
         ui::needs_update = true;
 
-        os::printf("Time updated to %02d:%02d\r\n", h, m);
+        os::logf("Time updated to %02d:%02d", h, m);
 
         int intensity = 7;
         if (h >= 20 || h < 6)
@@ -80,7 +89,7 @@ void ui_set_time(int h, int m)
         {
             ui::intensity = intensity;
             ui::LedMatrix.intensity(intensity);
-            os::printf("LED intensity changed to %d\r\n", intensity);
+            os::logf("LED intensity changed to %d", intensity);
         }
     }
 }
@@ -89,10 +98,10 @@ void ui_set_weather(float t)
 {
     if (t != ui::temperature)
     {
+        os::logf("Weather updated to %f", t);
+
         ui::temperature = t;
         ui::needs_update = true;
-
-        os::printf("Current weather updated to %f\r\n", t);
     }
 }
 
@@ -137,36 +146,8 @@ void ui::draw_preloader()
         ui::anim_step = 0;
     }
 
+    os::logf(F("ui_draw_preloader(): playing animation at %d/%d"), ui::anim_step, 4);
     os::set_delay(250);
-
-    /*
-    char buff[12] = "";
-    for (int i = 0; i < 8; i++)
-    {
-        buff[i] = FONT_SPECIAL_LINE;
-    }
-
-    if (ui::anim_step >= 8)
-    {
-        buff[16 - ui::anim_step + 1] = FONT_SPECIAL_BAR;
-    }
-    else
-    {
-        buff[ui::anim_step] = FONT_SPECIAL_BAR;
-    }
-
-    ui::LedMatrix.clear();
-    ui::LedMatrix.text(buff, FONT_SPECIAL, 0, 0);
-    ui::LedMatrix.sync();
-
-    ui::anim_step++;
-    if (ui::anim_step >= 15)
-    {
-        ui::anim_step = 0;
-    }
-
-    os::set_delay(CONFIG_LED_ANIMATION_STEP);
-    */
 }
 
 void ui::draw_time()
@@ -178,16 +159,20 @@ void ui::draw_time()
 
         ui::LedMatrix.clear();
         ui::LedMatrix.text(buff, FONT_MONOSPACE);
-        ui::LedMatrix.sync(TRANSITION_SCROLL_UP, ui::anim_step);
+        ui::LedMatrix.sync(TRANSITION_SCROLL_UP, ui::anim_step % MAX_ANIM_STEPS);
 
         ui::anim_step++;
-        if (ui::anim_step > 8)
+        if (ui::anim_step > MAX_ANIM_STEPS)
         {
+            os::logf(F("ui_draw_time(): animation completed at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
             ui::needs_update = false;
             ui::LedMatrix.swap();
+            ui::LedMatrix.sync();
+            ui::anim_step = 0;
         }
         else
         {
+            os::logf(F("ui_draw_time(): playing animation at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
             os::set_delay(CONFIG_LED_ANIMATION_STEP);
         }
     }
@@ -204,23 +189,78 @@ void ui::draw_weather()
         buff[0] = ui::temperature >= 0 ? '+' : '-';
         buff[1] = hi != 0 ? hi + '0' : ' ';
         buff[2] = lo + '0';
-        buff[3] = '\u00B0';
+        buff[3] = 0xB0;
         buff[4] = 'C';
-        buff[5] = '\0';
+        buff[5] = 0;
 
         ui::LedMatrix.clear();
         ui::LedMatrix.text(buff);
-        ui::LedMatrix.sync(TRANSITION_SCROLL_DOWN, ui::anim_step);
+        ui::LedMatrix.sync(TRANSITION_SCROLL_DOWN, ui::anim_step % MAX_ANIM_STEPS);
 
         ui::anim_step++;
-        if (ui::anim_step > 8)
+        if (ui::anim_step > MAX_ANIM_STEPS)
         {
+            os::logf(F("ui_draw_weather(): animation completed at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
             ui::needs_update = false;
             ui::LedMatrix.swap();
+            ui::LedMatrix.sync();
+            ui::anim_step = 0;
         }
         else
         {
+            os::logf(F("ui_draw_weather(): playing animation at %d/%d"), ui::anim_step, MAX_ANIM_STEPS);
             os::set_delay(CONFIG_LED_ANIMATION_STEP);
         }
     }
+}
+
+void ui_print_state()
+{
+    os::println(F("Cuurent display state"));
+    os::println(F("====================="));
+    os::println();
+
+    os::println(F("Front buffer:"));
+    for (int y = 0; y < ui::LedMatrix.height(); y++)
+    {
+        for (int x = 0; x < ui::LedMatrix.width(); x++)
+        {
+            if (ui::LedMatrix.get_front_buffer(x, y))
+            {
+                os::print('X');
+            }
+            else
+            {
+                os::print('-');
+            }
+        }
+        os::println();
+    }
+    os::println();
+
+    os::println(F("Back buffer:"));
+    for (int y = 0; y < ui::LedMatrix.height(); y++)
+    {
+        for (int x = 0; x < ui::LedMatrix.width(); x++)
+        {
+            if (ui::LedMatrix.get(x, y))
+            {
+                os::print('X');
+            }
+            else
+            {
+                os::print('-');
+            }
+        }
+        os::println();
+    }
+    os::println();
+
+    os::printf(F("mode:         0x%02X\r\n"), ui::mode);
+    os::printf(F("hour:         %d\r\n"), ui::hour);
+    os::printf(F("minute:       %d\r\n"), ui::minute);
+    os::printf(F("temperature:  %f\r\n"), ui::temperature);
+    os::printf(F("needs_update: %c\r\n"), ui::needs_update ? 'Y' : 'N');
+    os::printf(F("anim_step:    %d\r\n"), ui::anim_step);
+    os::println();
 }

@@ -30,14 +30,6 @@ class event_handler : public mqtt_event_handler
 
     virtual void on_weather(float t)
     {
-        // ui_mode mode = ui_get_mode();
-        // switch (mode)
-        // {
-        // case UI_LOADING:
-        //     ui_set_mode(UI_WEATHER);
-        //     break;
-        // }
-
         ui_set_weather(t);
         _has_weather = true;
     }
@@ -49,13 +41,24 @@ class event_handler : public mqtt_event_handler
         _has_weather = false;
     }
 
-    void on_btn_pressed()
+    void on_btn_pressed(btn_cmd_t cmd)
     {
-        ui_blink();
+        switch (cmd)
+        {
+        case BTN_CLICK:
+            os::logf(F("Button pressed"));
+            if (toggle_mode())
+            {
+                ui_blink();
+                _can_cycle = !_can_cycle;
+            }
+            break;
 
-        _can_cycle = !_can_cycle;
-
-        // toggle_mode();
+        case BTN_LONG_CLICK:
+            os::logf(F("Button long press detected, will now reboot"));
+            ESP.restart();
+            break;
+        }
     }
 
     void on_timer()
@@ -67,7 +70,7 @@ class event_handler : public mqtt_event_handler
     }
 
   private:
-    void toggle_mode()
+    bool toggle_mode()
     {
         ui_mode mode = ui_get_mode();
         switch (mode)
@@ -76,24 +79,31 @@ class event_handler : public mqtt_event_handler
             if (_has_weather)
             {
                 ui_set_mode(UI_WEATHER);
+                return true;
             }
+            os::logf(F("Can't switch mode to UI_WEATHER: no weather data is available"));
             break;
 
         case UI_WEATHER:
             if (_has_time)
             {
                 ui_set_mode(UI_TIME);
+                return true;
             }
+            os::logf(F("Can't switch mode to UI_TIME: no time data is available"));
             break;
         }
+
+        ui_set_mode(mode);
+        return false;
     }
 };
 
 event_handler handler;
 
-void on_btn_pressed()
+void on_btn_pressed(btn_cmd_t cmd)
 {
-    handler.on_btn_pressed();
+    handler.on_btn_pressed(cmd);
 }
 
 void on_timer()

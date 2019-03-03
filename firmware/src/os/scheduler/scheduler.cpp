@@ -36,7 +36,7 @@ void safe_strcpy(char *dest, const char *str, size_t len);
 
 void os::safe_strcpy(char *dest, const char *src, size_t len)
 {
-    int i = 0;
+    unsigned int i = 0;
     for (; i < len && src[i] != 0; i++)
     {
         dest[i] = src[i];
@@ -55,7 +55,7 @@ void os::safe_strcpy(char *dest, const char *src, size_t len)
 
 os::thread_id os::create_thread(os::thread_func func, const char name[8])
 {
-    for (int i = 0; i < os::MAX_THREADS; i++)
+    for (size_t i = 0; i < os::MAX_THREADS; i++)
     {
         if (os::threads[i].state == os::NONE)
         {
@@ -70,12 +70,7 @@ os::thread_id os::create_thread(os::thread_func func, const char name[8])
         }
     }
 
-    os::print(F("[ "));
-    os::attr(os::RED);
-    os::print(F(" ERROR "));
-    os::attr(os::RESET);
-    os::print(F(" ] os::create_thread(): no free thread slots"));
-    os::println();
+    os::println(F("[  ERROR  ] os::create_thread(): no free thread slots"));
 
     return os::UNKNOWN_THREAD;
 }
@@ -105,12 +100,7 @@ void os::set_func(os::thread_func func, const char name[8])
 {
     if (os::current_thread == NULL)
     {
-        os::print(F("[ "));
-        os::attr(os::RED);
-        os::print(F(" ERROR "));
-        os::attr(os::RESET);
-        os::print(F(" ] os::set_func(): no context"));
-        os::println();
+        os::println(F("[ ERROR ] os::set_func(): no context"));
         return;
     }
 
@@ -122,12 +112,7 @@ void os::set_delay(int32_t ms)
 {
     if (os::current_thread == NULL)
     {
-        os::print(F("[ "));
-        os::attr(os::RED);
-        os::print(F(" ERROR "));
-        os::attr(os::RESET);
-        os::print(F(" ] os::set_delay(): no context"));
-        os::println();
+        os::println(F("[ ERROR ] os::set_delay(): no context"));
         return;
     }
 
@@ -166,7 +151,7 @@ void os::schedule_task(os::thread &thread)
 
 void os::run()
 {
-    for (int i = 0; i < os::MAX_THREADS; i++)
+    for (size_t i = 0; i < os::MAX_THREADS; i++)
     {
         os::schedule_task(os::threads[i]);
     }
@@ -174,12 +159,9 @@ void os::run()
 
 void os::_dump_threads()
 {
-    os::attr(os::INVERSE);
-    os::print(F("#  ID   NAME       STATE      ENTRYPOINT DELAY      FUNCTION  "));
-    os::attr(os::RESET);
-    os::println();
+    os::println(F("#  ID   NAME       STATE      ENTRYPOINT DELAY      FUNCTION  "));
 
-    for (int i = 0; i < os::MAX_THREADS; i++)
+    for (size_t i = 0; i < os::MAX_THREADS; i++)
     {
         const char *state = "?";
         switch (os::threads[i].state)

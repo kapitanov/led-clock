@@ -6,11 +6,7 @@ using namespace os;
 
 void cmd_mqtt_status()
 {
-    attr(BLACK, BG_CYAN);
-    print(F("MQTT status"));
-    attr(RESET);
-    println();
-
+    println(F("MQTT status"));
     printf(F("Hostname:    \"%s\"\r\n"), mqtt_get_hostname());
     printf(F("Username:    \"%s\"\r\n"), mqtt_get_username());
     printf(F("Password:    \"%s\"\r\n"), mqtt_get_password());
@@ -19,7 +15,6 @@ void cmd_mqtt_status()
 
 void cmd_mqtt_connect(const String &args)
 {
-
     String hostname, username, password;
 
     int i = args.indexOf(' ');
@@ -44,16 +39,7 @@ void cmd_mqtt_connect(const String &args)
         hostname = args;
     }
 
-    attr(RESET);
-    print(F("Connecting to MQTT broker "));
-    attr(CYAN);
-    print(hostname);
-    attr(RESET);
-    print(F(" as "));
-    attr(CYAN);
-    print(username);
-    attr(RESET);
-    println();
+    printf(F("Connecting to MQTT broker \"%s\" as \"%s\"\r\n"), hostname.c_str(), username.c_str());
 
     mqtt_connect(hostname, username, password);
 }

@@ -18,13 +18,7 @@ config_t mqtt::_config;
 
 void mqtt_on_connect(bool sessionPresent)
 {
-    {
-        lock lock;
-        attr(GREEN);
-        print(F("mqtt: connected"));
-        attr(RESET);
-        println();
-    }
+    logf(F("mqtt: connected"));
 
     _mqtt.subscribe(MQTT_TIME_TOPIC, 0);
     _mqtt.subscribe(MQTT_WEATHER_TOPIC, 0);
@@ -61,13 +55,7 @@ const char *mqtt_disconnect_reason(AsyncMqttClientDisconnectReason reason)
 
 void mqtt_on_disconnect(AsyncMqttClientDisconnectReason reason)
 {
-    {
-        lock lock;
-        attr(RED);
-        printf(F("mqtt: failed to connect to \"%s\": %s"), _config.host, mqtt_disconnect_reason(reason));
-        attr(RESET);
-        println();
-    }
+    logf(F("mqtt: failed to connect to \"%s\": %s"), _config.host, mqtt_disconnect_reason(reason));
 
     mqtt::_handler->on_error();
 
@@ -79,14 +67,7 @@ void mqtt_on_message(char *topic, char *payload, AsyncMqttClientMessagePropertie
 {
     String topicStr(topic);
     String payloadStr(payload);
-    {
-        lock lock;
-        printf(F("mqtt: <<< [%s] "), topic);
-        attr(INVERSE);
-        print(payload);
-        attr(RESET);
-        println();
-    }
+    logf(F("mqtt: <<< [%s] %s"), topic, payload);
 
     _json_buffer.clear();
     JsonObject &json = _json_buffer.parseObject(payload);
@@ -107,11 +88,7 @@ void mqtt_connect()
 
     if (strlen(_config.host) <= 0)
     {
-        lock locker;
-        attr(RED);
         println(F("MQTT connection is not configured"));
-        attr(RESET);
-
         mqtt::_handler->on_error();
         return;
     }
@@ -119,7 +96,7 @@ void mqtt_connect()
     char clientId[64] = "";
     sprintf(clientId, MQTT_CLIENT, ESP.getChipId());
 
-    printf(F("mqtt: connecting to \"%s\" as \"%s\:%s\" as \"%s\"\r\n"), _config.host, _config.username, _config.password, clientId);
+    logf(F("mqtt: connecting to \"%s\" as \"%s:%s\" as \"%s\""), _config.host, _config.username, _config.password, clientId);
 
     _mqtt.setClientId(clientId);
     _mqtt.setServer(_config.host, MQTT_PORT);
@@ -205,8 +182,7 @@ void mqtt_reset()
 
 void mqtt::cfg_read()
 {
-    lock l;
-    println(F("mqtt: reading config"));
+    logf(F("mqtt: reading config"));
 
     memset(&_config, 0, sizeof(config_t));
     EEPROM.begin(sizeof(config_t) + sizeof(uint32_t));
@@ -227,21 +203,18 @@ void mqtt::cfg_read()
     uint32_t actual_crc = mqtt::crc((uint8_t *)&_config, sizeof(config_t));
     if (crc != actual_crc)
     {
-        attr(RED);
-        printf(F("mqtt: config is damaged (CRC 0x%08X)\r\n"), crc);
-        attr(RESET);
+        logf(F("mqtt: config is damaged (CRC 0x%08X)"), crc);
 
         mqtt_reset();
         return;
     }
 
-    printf(F("mqtt: config is ready (CRC 0x%08X)\r\n"), crc);
+    logf(F("mqtt: config is ready (CRC 0x%08X)"), crc);
 }
 
 void mqtt::cfg_write()
 {
-    lock l;
-    println(F("mqtt: writing config"));
+    logf(F("mqtt: writing config"));
 
     EEPROM.begin(sizeof(config_t) + sizeof(uint32_t));
 
@@ -260,7 +233,7 @@ void mqtt::cfg_write()
     EEPROM.commit();
     EEPROM.end();
 
-    printf(F("mqtt: config is saved (CRC 0x%08X)\r\n"), crc);
+    logf(F("mqtt: config is saved (CRC 0x%08X)"), crc);
 }
 
 uint32_t mqtt::crc(const uint8_t *buffer, size_t length)

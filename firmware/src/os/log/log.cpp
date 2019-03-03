@@ -1,81 +1,48 @@
-#include "terminal_impl.h"
+#include "log.h"
+#include "../terminal/terminal.h"
 
 using namespace os;
 
-void os::println()
+namespace os
 {
-    print('\r');
-    print('\n');
+void print_log_header()
+{
+    uint32_t cycles = ESP.getCycleCount();
+    uint8_t freq = ESP.getCpuFreqMHz();
+    uint32_t msec = cycles / 1000;
+    msec /= freq;
+    uint32_t sec = msec / 1000;
+    msec = msec % 1000;
+    uint32_t min = sec / 60;
+    sec = sec % 60;
+    uint32_t hour = min / 60;
+    min = min % 60;
+
+    printf(F("[%02d:%02d:%02d.%03d] "), hour, min, sec, msec);
 }
 
-void os::println(const __FlashStringHelper *str)
+void log(const __FlashStringHelper *str)
 {
-    print(str);
-    println();
+    print_log_header();
+    println(str);
 }
 
-void os::println(const String &str)
+void log(const String &str)
 {
-    print(str);
-    println();
+    print_log_header();
+    println(str);
 }
 
-void os::println(const char str[])
+void log(const char str[])
 {
-    print(str);
-    println();
+    print_log_header();
+    println(str);
 }
 
-void os::println(char x)
+void logf(const char *format, ...)
 {
-    print(x);
-    println();
-}
+    print_log_header();
 
-void os::print(const __FlashStringHelper *str)
-{
-    PGM_P p = reinterpret_cast<PGM_P>(str);
-
-    int i = 0;
-
-    while (true)
-    {
-        uint8_t c = pgm_read_byte(p++);
-        if (c == 0)
-        {
-            break;
-        }
-
-        print((char)c);
-        i++;
-    }
-}
-
-void os::print(const String &str)
-{
-    for (unsigned int i = 0; i < str.length(); i++)
-    {
-        print(str.charAt(i));
-    }
-}
-
-void os::print(const char str[])
-{
-    int i = 0;
-    while (str[i] != 0)
-    {
-        print(str[i]);
-        i++;
-    }
-}
-
-void os::print(char x)
-{
-    Serial.print(x);
-}
-
-void os::printf(const char *format, ...)
-{
     va_list arg;
     va_start(arg, format);
     char temp[64];
@@ -105,10 +72,14 @@ void os::printf(const char *format, ...)
     {
         delete[] buffer;
     }
+
+    println();
 }
 
-void os::printf(const __FlashStringHelper *format, ...)
+void logf(const __FlashStringHelper *format, ...)
 {
+    print_log_header();
+    
     va_list arg;
     va_start(arg, format);
     char temp[64];
@@ -137,4 +108,7 @@ void os::printf(const __FlashStringHelper *format, ...)
     {
         delete[] buffer;
     }
+
+    println();
 }
+} // namespace os

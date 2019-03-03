@@ -21,12 +21,11 @@ bool cli_handler(const String &command, const String &args)
     else if (command.equalsIgnoreCase("mqtt"))
     {
         handler = cmd_mqtt;
-    }
-    /*
+    }    
     else if (command.equalsIgnoreCase("state"))
     {
         handler = cmd_state;
-    }*/
+    }
 
     return (handler != NULL && handler(args));
 }

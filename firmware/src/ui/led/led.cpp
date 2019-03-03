@@ -25,6 +25,16 @@ led_matrix_t::~led_matrix_t()
     delete[] _back_buffer;
 }
 
+int led_matrix_t::height() const
+{
+    return 8;
+}
+
+int led_matrix_t::width() const
+{
+    return _count * 8;
+}
+
 void led_matrix_t::init()
 {
     font_init();
@@ -51,6 +61,16 @@ void led_matrix_t::intensity(int intensity)
     {
         _spi_transfer(i, OP_INTENSITY, intensity);
     }
+}
+
+bool led_matrix_t::get_front_buffer(int x, int y)
+{
+    if (x < 0 || x >= _count * 8 || y < 0 || y >= 8)
+    {
+        return false;
+    }
+
+    return bitRead(_front_buffer[x / 8 + _count * (y % 8)], 7 - x % 8);
 }
 
 bool led_matrix_t::get(int x, int y)

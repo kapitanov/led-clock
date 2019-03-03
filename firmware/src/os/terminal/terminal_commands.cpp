@@ -3,18 +3,9 @@
 
 using namespace os;
 
-void os::_cmd_cls()
-{
-    clear();
-}
-
-
 void os::_cmd_restart()
 {
-    attr(BOLD, YELLOW);
-    print(F("Restarting..."));
-    attr(RESET);
-    println();
+    println(F("Restarting..."));
     println();
 
     ESP.restart();
@@ -22,10 +13,7 @@ void os::_cmd_restart()
 
 void os::_cmd_stats()
 {
-    attr(BLACK, BG_CYAN);
-    print(F("ESP stats"));
-    attr(RESET);
-    println();
+    println(F("ESP stats"));
 
     uint32_t free_mem = ESP.getFreeHeap();
     if (free_mem < 1024)
@@ -47,101 +35,111 @@ void os::_cmd_stats()
     switch (boot_mode)
     {
     case 1:
-        print(F("BootMode:              SYS_BOOT_NORMAL_MODE\r\n"));
+        print(F("BootMode:              SYS_BOOT_NORMAL_MODE"));
         break;
     case 0:
-        print(F("BootMode:              SYS_BOOT_ENHANCE_MODE\r\n"));
+        print(F("BootMode:              SYS_BOOT_ENHANCE_MODE"));
         break;
     default:
-        printf(F("BootMode:              %d\r\n"), boot_mode);
+        printf(F("BootMode:              %d"), boot_mode);
         break;
     }
+    println();
 
-    printf(F("CpuFreq:               %d MHz\r\n"), ESP.getCpuFreqMHz());
-    printf(F("FlashChipId:           0x%08X\r\n"), ESP.getFlashChipId());
+    printf(F("CpuFreq:               %d MHz"), ESP.getCpuFreqMHz());
+    println();
+    printf(F("FlashChipId:           0x%08X"), ESP.getFlashChipId());
+    println();
 
     uint32_t chip_real_size = ESP.getFlashChipRealSize();
     if (chip_real_size < 1024)
     {
-        printf(F("FlashChipRealSize:     %d b\r\n"), chip_real_size);
+        printf(F("FlashChipRealSize:     %d b"), chip_real_size);
     }
     else if (chip_real_size < 1024 * 1024)
     {
-        printf(F("FlashChipRealSize:     %d Kb\r\n"), chip_real_size / 1024);
+        printf(F("FlashChipRealSize:     %d Kb"), chip_real_size / 1024);
     }
     else
     {
-        printf(F("FlashChipRealSize:     %d Mb\r\n"), chip_real_size / 1024 / 1024);
+        printf(F("FlashChipRealSize:     %d Mb"), chip_real_size / 1024 / 1024);
     }
+    println();
 
     uint32_t chip_size = ESP.getFlashChipSize();
     if (chip_size < 1024)
     {
-        printf(F("FlashChipSize:         %d b\r\n"), chip_size);
+        printf(F("FlashChipSize:         %d b"), chip_size);
     }
     else if (chip_size < 1024 * 1024)
     {
-        printf(F("FlashChipSize:         %d Kb\r\n"), chip_size / 1024);
+        printf(F("FlashChipSize:         %d Kb"), chip_size / 1024);
     }
     else
     {
-        printf(F("FlashChipSize:         %d Mb\r\n"), chip_size / 1024 / 1024);
+        printf(F("FlashChipSize:         %d Mb"), chip_size / 1024 / 1024);
     }
+    println();
 
-    printf(F("FlashChipSpeed:        %d MHz\r\n"), ESP.getFlashChipSpeed() / 1000 / 1000);
+    printf(F("FlashChipSpeed:        %d MHz"), ESP.getFlashChipSpeed() / 1000 / 1000);
+    println();
 
     FlashMode_t flash_mode = ESP.getFlashChipMode();
     switch (flash_mode)
     {
     case FM_QIO:
-        print(F("FlashChipMode:         FM_QIO\r\n"));
+        print(F("FlashChipMode:         FM_QIO"));
         break;
     case FM_QOUT:
-        print(F("FlashChipMode:         FM_QOUT\r\n"));
+        print(F("FlashChipMode:         FM_QOUT"));
         break;
     case FM_DIO:
-        print(F("FlashChipMode:         FM_DIO\r\n"));
+        print(F("FlashChipMode:         FM_DIO"));
         break;
     case FM_DOUT:
-        print(F("FlashChipMode:         FM_DOUT\r\n"));
+        print(F("FlashChipMode:         FM_DOUT"));
         break;
     case FM_UNKNOWN:
-        print(F("FlashChipMode:         FM_UNKNOWN\r\n"));
+        print(F("FlashChipMode:         FM_UNKNOWN"));
         break;
     default:
-        printf(F("FlashChipMode:         0x%02X\r\n"), flash_mode);
+        printf(F("FlashChipMode:         0x%02X"), flash_mode);
         break;
     }
+    println();
 
     uint32_t sketch_size = ESP.getSketchSize();
     if (sketch_size < 1024)
     {
-        printf(F("SketchSize:            %d b\r\n"), sketch_size);
+        printf(F("SketchSize:            %d b"), sketch_size);
     }
     else if (sketch_size < 1024 * 1024)
     {
-        printf(F("SketchSize:            %d Kb\r\n"), sketch_size / 1024);
+        printf(F("SketchSize:            %d Kb"), sketch_size / 1024);
     }
     else
     {
-        printf(F("SketchSize:            %d Mb\r\n"), sketch_size / 1024 / 1024);
+        printf(F("SketchSize:            %d Mb"), sketch_size / 1024 / 1024);
     }
+    println();
 
-    printf(F("SketchMD5:             %s\r\n"), ESP.getSketchMD5().c_str());
+    printf(F("SketchMD5:             %s"), ESP.getSketchMD5().c_str());
+    println();
 
     uint32_t Free_sketch_size = ESP.getFreeSketchSpace();
     if (Free_sketch_size < 1024)
     {
-        printf(F("FreeSketchSpace:       %d b\r\n"), Free_sketch_size);
+        printf(F("FreeSketchSpace:       %d b"), Free_sketch_size);
     }
     else if (Free_sketch_size < 1024 * 1024)
     {
-        printf(F("FreeSketchSpace:       %d Kb\r\n"), Free_sketch_size / 1024);
+        printf(F("FreeSketchSpace:       %d Kb"), Free_sketch_size / 1024);
     }
     else
     {
-        printf(F("FreeSketchSpace:       %d Mb\r\n"), Free_sketch_size / 1024 / 1024);
+        printf(F("FreeSketchSpace:       %d Mb"), Free_sketch_size / 1024 / 1024);
     }
+    println();
 
     printf(F("ResetReason:           %s\r\n"), ESP.getResetReason().c_str());
     printf(F("ResetInfo:             %s\r\n"), ESP.getResetInfo().c_str());
@@ -150,10 +148,6 @@ void os::_cmd_stats()
 
 void os::_cmd_ps()
 {
-    attr(BLACK, BG_CYAN);
-    print(F("Threads"));
-    attr(RESET);
-    println();
-
+    println(F("Threads"));
     _dump_threads();
 }

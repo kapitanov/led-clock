@@ -10,7 +10,7 @@ Button button(CONFIG_BUTTON_PIN, CONFIG_BUTTON_PULLUP, CONFIG_BUTTON_INVERT, CON
 btn_handler handler;
 os::thread_id thread;
 void thread_func();
-}
+} // namespace btn
 
 void btn_init(btn_handler handler)
 {
@@ -24,6 +24,22 @@ void btn::thread_func()
 
     if (btn::button.wasReleased())
     {
-        btn::handler();
+        btn::handler(BTN_CLICK);
+    }
+    else
+    {
+        bool longPress;
+        if (CONFIG_BUTTON_INVERT)
+        {
+            longPress = btn::button.releasedFor(CONFIG_BUTTON_LONG_PRESS);
+        }
+        else
+        {
+            longPress = btn::button.pressedFor(CONFIG_BUTTON_LONG_PRESS);
+        }
+        if (longPress)
+        {
+            btn::handler(BTN_LONG_CLICK);
+        }
     }
 }

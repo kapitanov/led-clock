@@ -10,6 +10,7 @@
 #define CONFIG_BUTTON_PULLUP        true
 #define CONFIG_BUTTON_INVERT        true
 #define CONFIG_BUTTON_DEBOUNCE_MS   20
+#define CONFIG_BUTTON_LONG_PRESS    2000
 
 #define MQTT_CLIENT "led_informer_esp8266_%X"
 #define MQTT_PORT 1883

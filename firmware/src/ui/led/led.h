@@ -24,7 +24,11 @@ public:
     led_matrix_t(int pin_din, int pin_cs, int pin_clk, int count);
     ~led_matrix_t();
 
+    int height() const;
+    int width() const;
+
     void init();
+    bool get_front_buffer(int x, int y);
     bool get(int x, int y);
     void set(int x, int y, boolean state);
     void intensity(int intensity);
