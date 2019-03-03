@@ -52,6 +52,10 @@ class event_handler : public mqtt_event_handler
                 ui_blink();
                 _can_cycle = !_can_cycle;
             }
+            else
+            {
+                ui_set_mode(ui_get_mode());
+            }            
             break;
 
         case BTN_LONG_CLICK:
@@ -93,8 +97,7 @@ class event_handler : public mqtt_event_handler
             os::logf(F("Can't switch mode to UI_TIME: no time data is available"));
             break;
         }
-
-        ui_set_mode(mode);
+        
         return false;
     }
 };
