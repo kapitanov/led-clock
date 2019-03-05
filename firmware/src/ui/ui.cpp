@@ -16,7 +16,9 @@ unsigned char anim_step;
 os::thread_id thread;
 bool should_blink;
 
-const int MAX_ANIM_STEPS = 8;
+const transition_type ANIMATION_UP = TRANSITION_SCROLL_UP;
+const transition_type ANIMATION_DOWN = TRANSITION_SCROLL_DOWN;
+const int32_t ANIMATION_SPEED = CONFIG_LED_ANIMATION_STEP;
 
 int intensity;
 
@@ -164,7 +166,7 @@ void ui::draw_time()
         ui::LedMatrix.text(buff, FONT_MONOSPACE);
 
         ui::anim_step++;
-        if (ui::anim_step >= MAX_ANIM_STEPS)
+       if (ui::LedMatrix.is_completed(ANIMATION_UP, ui::anim_step))
         {
             ui::needs_update = false;
             ui::LedMatrix.sync();
@@ -173,8 +175,8 @@ void ui::draw_time()
         }
         else
         {
-            ui::LedMatrix.sync(TRANSITION_SCROLL_UP, ui::anim_step % MAX_ANIM_STEPS);
-            os::set_delay(CONFIG_LED_ANIMATION_STEP);
+            ui::LedMatrix.sync(ANIMATION_UP, ui::anim_step);
+            os::set_delay(ANIMATION_SPEED);
         }
     }
 }
@@ -198,7 +200,7 @@ void ui::draw_weather()
         ui::LedMatrix.text(buff);
 
         ui::anim_step++;
-        if (ui::anim_step >= MAX_ANIM_STEPS)
+        if (ui::LedMatrix.is_completed(ANIMATION_DOWN, ui::anim_step))
         {
             ui::needs_update = false;
             ui::LedMatrix.sync();
@@ -207,8 +209,8 @@ void ui::draw_weather()
         }
         else
         {
-            ui::LedMatrix.sync(TRANSITION_SCROLL_DOWN, ui::anim_step % MAX_ANIM_STEPS);
-            os::set_delay(CONFIG_LED_ANIMATION_STEP);
+            ui::LedMatrix.sync(ANIMATION_DOWN, ui::anim_step);
+            os::set_delay(ANIMATION_SPEED);
         }
     }
 }

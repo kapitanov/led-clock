@@ -17,6 +17,8 @@ enum transition_type {
     TRANSITION_FADE_DOWN,
     TRANSITION_SCROLL_UP,
     TRANSITION_SCROLL_DOWN,
+    TRANSITION_SCROLL_LEFT,
+    TRANSITION_SCROLL_RIGHT,
 };
 
 class led_matrix_t
@@ -39,6 +41,7 @@ public:
 
     void sync();
     void sync(transition_type type, int step);
+    bool is_completed(transition_type type, int step);
     void swap();
 
 private:
@@ -54,6 +57,7 @@ private:
     void _set_scan_limit(int addr, int limit);
     bool _get_render_buffer(int x, int y);
     void _set_render_buffer(int x, int y, boolean state);
+    int _transition_steps(transition_type type);
     void _shutdown(bool value);
     void _spi_transfer(byte opcode, byte data);
     void _spi_transfer(int addr, byte opcode, byte data);

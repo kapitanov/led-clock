@@ -32,7 +32,7 @@ thread *current_thread;
 
 void schedule_task(os::thread &thread);
 void safe_strcpy(char *dest, const char *str, size_t len);
-}
+} // namespace os
 
 void os::safe_strcpy(char *dest, const char *src, size_t len)
 {
@@ -163,20 +163,23 @@ void os::_dump_threads()
 
     for (size_t i = 0; i < os::MAX_THREADS; i++)
     {
-        const char *state = "?";
-        switch (os::threads[i].state)
+        if (os::threads[i].state != os::NONE)
         {
-        case os::NONE:
-            state = "NONE";
-            break;
-        case os::ACTIVE:
-            state = "ACTIVE";
-            break;
-        case os::SLEEP:
-            state = "SLEEP";
-            break;
-        }
+            const char *state = "?";
+            switch (os::threads[i].state)
+            {
+            case os::NONE:
+                state = "NONE";
+                break;
+            case os::ACTIVE:
+                state = "ACTIVE";
+                break;
+            case os::SLEEP:
+                state = "SLEEP";
+                break;
+            }
 
-        os::printf(F("%02d 0x%02X %-10s %-10s 0x%08X %-10d %-10s\r\n"), i, os::threads[i].id, os::threads[i].name, state, os::threads[i].func, os::threads[i].delay, os::threads[i].func_name);
+            os::printf(F("%02d 0x%02X %-10s %-10s 0x%08X %-10d %-10s\r\n"), i, os::threads[i].id, os::threads[i].name, state, os::threads[i].func, os::threads[i].delay, os::threads[i].func_name);
+        }
     }
 }

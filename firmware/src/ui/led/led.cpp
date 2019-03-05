@@ -166,25 +166,89 @@ void led_matrix_t::sync(transition_type type, int step)
     }
 }
 
-void led_matrix_t::_transition(transition_type type, int step)
+bool led_matrix_t::is_completed(transition_type type, int step)
+{
+    return step >= _transition_steps(type);
+}
+
+int led_matrix_t::_transition_steps(transition_type type)
 {
     switch (type)
     {
     case TRANSITION_FADE_UP:
     case TRANSITION_FADE_DOWN:
+    case TRANSITION_SCROLL_UP:
+    case TRANSITION_SCROLL_DOWN:
+        return height();
+
+    case TRANSITION_SCROLL_LEFT:
+    case TRANSITION_SCROLL_RIGHT:
+        return width();
+
+    default:
+        return 1;
+    }
+}
+
+void led_matrix_t::_transition(transition_type type, int step)
+{
+    step = step % _transition_steps(type);
+
+    switch (type)
+    {
+    case TRANSITION_FADE_UP:
+    {
+        int y = 0;
+        for (; y < step; y++)
+        {
+            for (int x = 0; x < width(); x++)
+            {
+                _set_render_buffer(x, y, get_front_buffer(x, y));
+            }
+        }
+
+        for (; y < height(); y++)
+        {
+            for (int x = 0; x < width(); x++)
+            {
+                _set_render_buffer(x, y, get(x, y));
+            }
+        }
+    }
+    break;
+    case TRANSITION_FADE_DOWN:
+    {
+        int y = 0;
+        for (; y < step; y++)
+        {
+            for (int x = 0; x < width(); x++)
+            {
+                _set_render_buffer(x, y, get(x, y));
+            }
+        }
+
+        for (; y < height(); y++)
+        {
+            for (int x = 0; x < width(); x++)
+            {
+                _set_render_buffer(x, y, get_front_buffer(x, y));
+            }
+        }
+    }
+    break;
 
     case TRANSITION_SCROLL_UP:
         for (int x = 0; x < width(); x++)
         {
-            for (int y = 0; y < 8; y++)
+            for (int y = 0; y < height(); y++)
             {
-                if (8 - y > step)
+                if (height() - y > step)
                 {
                     _set_render_buffer(x, y, get_front_buffer(x, y + step));
                 }
                 else
                 {
-                    _set_render_buffer(x, y, get(x, y + step - 8));
+                    _set_render_buffer(x, y, get(x, y + step - height()));
                 }
             }
         }
@@ -193,7 +257,7 @@ void led_matrix_t::_transition(transition_type type, int step)
     case TRANSITION_SCROLL_DOWN:
         for (int x = 0; x < width(); x++)
         {
-            for (int y = 0; y < 8; y++)
+            for (int y = 0; y < height(); y++)
             {
                 if (y >= step)
                 {
@@ -201,7 +265,41 @@ void led_matrix_t::_transition(transition_type type, int step)
                 }
                 else
                 {
-                    _set_render_buffer(x, y, get(x, 8 - step + y));
+                    _set_render_buffer(x, y, get(x, height() - step + y));
+                }
+            }
+        }
+        break;
+
+    case TRANSITION_SCROLL_LEFT:
+        for (int x = 0; x < width(); x++)
+        {
+            for (int y = 0; y < height(); y++)
+            {
+                if (x >= step)
+                {
+                    _set_render_buffer(x, y, get_front_buffer(x - step, y));
+                }
+                else
+                {
+                    _set_render_buffer(x, y, get(width() - step + x, y));
+                }
+            }
+        }
+        break;
+
+    case TRANSITION_SCROLL_RIGHT:
+        for (int x = 0; x < width(); x++)
+        {
+            for (int y = 0; y < height(); y++)
+            {
+                if (width() - x > step)
+                {
+                    _set_render_buffer(x, y, get_front_buffer(x + step, y));
+                }
+                else
+                {
+                    _set_render_buffer(x, y, get(x + step - width(), y));
                 }
             }
         }
