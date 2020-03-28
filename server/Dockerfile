@@ -1,4 +1,4 @@
-FROM golang:latest as build-miot-weather
+FROM golang:latest as build-app
 ADD . /src
 WORKDIR /src
 RUN go get
@@ -10,8 +10,9 @@ RUN CGO_ENABLED=0 go get -u github.com/msoap/yandex-weather-cli
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
-COPY --from=build-miot-weather /src/server /app/server
-COPY --from=build-miot-weather /src/www /app/www
+COPY --from=build-app /src/server /app/server
+COPY --from=build-app /src/www /app/www
+COPY --from=build /usr/local/go/lib /usr/local/go/lib
 
 COPY --from=build-yandex-weather-cli /go/bin/yandex-weather-cli /bin
 
