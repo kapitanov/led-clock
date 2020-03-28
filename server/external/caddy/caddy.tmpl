@@ -1,0 +1,26 @@
+{{ range $host, $containers := groupByMulti $ "Env.VIRTUAL_HOST" "," }}
+{{ $host }} {
+  {{ range $index, $value := $containers }}
+    {{ $basicauth := $value.Env.BASIC_AUTH }}
+    {{ if $basicauth }}
+        basicauth {{ $basicauth }}
+    {{ end }}
+    {{ $networksLen := len $value.Networks }}
+    {{ if $value.Env.VIRTUAL_PORT }}
+      {{ range $i, $address := $value.Networks }}
+        proxy / {{ $address.IP }}:{{ $value.Env.VIRTUAL_PORT }} {
+          transparent
+          websocket
+        }
+      {{ end }}
+    {{ else }}
+      {{ range $i, $address := $value.Networks }}
+        proxy / {{ $address.IP }}:80 {
+          transparent
+          websocket
+        }
+      {{ end }}
+    {{ end }}
+  {{ end }}
+}
+{{ end }}

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Data service</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+        body {
+            margin-top: 80px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .card {
+            min-height: 100v;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.13.0/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-light bg-light fixed-top border-bottom border-secondary">
+        <a class="navbar-brand" href="#">
+            <i class="fa fa-globe text-primary"></i>
+            Data service
+        </a>
+    </nav>
+
+    <main role="main" class="container">
+
+        <div class="card">
+            <div class="card-header">
+                <ul id="tabs" class="nav nav-pills" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#time" role="tab" aria-controls="time"
+                            aria-selected="true">
+                            <i class="fa fa-clock-o"></i>
+                            <span class="d-none d-sm-inline"> Current time</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#weather" role="tab" aria-controls="weather"
+                            aria-selected="false">
+                            <i class="fa fa-cloud"></i>
+                            <span class="d-none d-sm-inline"> Current weather</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#covid-19" role="tab" aria-controls="covid-19"
+                            aria-selected="false">
+                            <i class="fa fa-ambulance"></i>
+                            <span class="d-none d-sm-inline"> COVID-19 stats</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content"></div>
+                <div class="tab-pane fade show active" id="time" role="tabpanel">
+                    <div id="time-pane" style="display: none;" class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fa fa-clock-o"></i>
+                                Current time
+                            </h5>
+                            <p class="card-text">
+                                <h1 id="time-now">
+                                    time-now
+                                </h1>
+                            </p>
+                            <button id="time-refresh-btn" class="btn btn-outline-primary pull-right">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="time-pane-preloader" class="text-center">
+                        <i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="weather" role="tabpanel">
+                    <div id="weather-pane" style="display: none;" class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fa fa-cloud"></i>
+                                Current weather in <span id="weather-city">weather-city</span>
+                            </h5>
+                            <p class="card-text">
+                                <h1 id="weather-now">
+                                    weather-now
+                                </h1>
+                            </p>
+                            <button id="weather-refresh-btn" class="btn btn-outline-primary pull-right">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="weather-pane-preloader" class="text-center">
+                        <i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="covid-19" role="tabpanel">
+                    <div id="covid19-pane" style="display: none;" class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fa fa-ambulance"></i>
+                                COVID-19 stats in <span id="covid19-country">covid19-country</span>
+                            </h5>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item list-group-item-warning">
+                                <span id="covid19-active-count">
+                                    covid19-active-count
+                                </span>
+                                active
+                            </li>
+                            <li class="list-group-item list-group-item-success">
+                                <span id="covid19-recovered-count">
+                                    covid19-recovered-count
+                                </span>
+                                recovered
+                            </li>
+                            <li class="list-group-item list-group-item-danger">
+                                <span id="covid19-death-count">
+                                    covid19-death-count
+                                </span>
+                                deaths
+                            </li>
+                        </ul>
+                        <div class="card-body">
+                            <button id="weather-refresh-btn" class="btn btn-outline-primary pull-right">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="covid19-pane-preloader" class="text-center">
+                        <i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <script>
+        function initTimeService() {
+            function update() {
+                $.getJSON('/api/time/request')
+                    .then(function (s) {
+                        $('#time-now').text('' + s.h + ':' + (s.m < 10 ? '0' : '') + s.m);
+                        $('#time-pane').show();
+                        $('#time-pane-preloader').hide();
+                    })
+                    .fail(function () { })
+                    .always(function () {
+                        setTimeout(update, 10 * 1000);
+                    })
+            }
+
+            update();
+
+            $('#time-refresh-btn').on('click', function () {
+                update();
+            });
+        }
+
+        function initWeatherService() {
+            function update() {
+                $.getJSON('/api/weather/request')
+                    .then(function (w) {
+                        $('#weather-city').text(w.city);
+                        $('#weather-now').html('' + w.now + ' &deg;C');
+                        $('#weather-pane').show();
+                        $('#weather-pane-preloader').hide();
+                    })
+                    .fail(function () { })
+                    .always(function () {
+                        setTimeout(update, 10 * 1000);
+                    })
+            }
+
+            update();
+
+            $('#weather-refresh-btn').on('click', function () {
+                update();
+            });
+        }
+
+        function initCovid19Service() {
+            function update() {
+                $.getJSON('/api/covid19/request')
+                    .then(function (s) {
+                        $('#covid19-country').text(s.country);
+                        $('#covid19-active-count').text(s.active);
+                        $('#covid19-recovered-count').text(s.recovered);
+                        $('#covid19-death-count').text(s.deaths);
+                        $('#covid19-pane').show();
+                        $('#covid19-pane-preloader').hide();
+                    })
+                    .fail(function () { })
+                    .always(function () {
+                        setTimeout(update, 10 * 1000);
+                    })
+            }
+
+            update();
+
+            $('#covid19-refresh-btn').on('click', function () {
+                update();
+            });
+        }
+
+        $(function () {
+            initTimeService();
+            initWeatherService();
+            initCovid19Service();
+        });
+    </script>
+</body>
+
+</html>
