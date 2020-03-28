@@ -1,1 +1,6 @@
 external
+Dockerfile
+README.md
+docker-compose.yml
+server
+server.exe
