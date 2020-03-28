@@ -11,7 +11,7 @@ WiFiClient mqtt::_wifi_client;
 AsyncMqttClient mqtt::_mqtt;
 bool mqtt::_tryConnect = true;
 
-StaticJsonBuffer<512> mqtt::_json_buffer;
+StaticJsonDocument<512> mqtt::_json;
 mqtt_event_handler *mqtt::_handler;
 
 config_t mqtt::_config;
@@ -69,16 +69,19 @@ void mqtt_on_message(char *topic, char *payload, AsyncMqttClientMessagePropertie
     String payloadStr(payload);
     logf(F("mqtt: <<< [%s] %s"), topic, payload);
 
-    _json_buffer.clear();
-    JsonObject &json = _json_buffer.parseObject(payload);
+    _json.clear();
+
+    deserializeJson(_json, payload);
 
     if (topicStr.equals(MQTT_TIME_TOPIC))
     {
-        _handler->on_time(json.get<int>("h"), json.get<int>("m"));
+        int h = _json["h"];
+        int m = _json["m"];
+        _handler->on_time(h, m);
     }
     else if (topicStr.equals(MQTT_WEATHER_TOPIC))
     {
-        _handler->on_weather(json.get<float>("now"));
+        _handler->on_weather(_json["now"]);
     }
 }
 

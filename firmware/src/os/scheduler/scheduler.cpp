@@ -131,6 +131,7 @@ void os::schedule_task(os::thread &thread)
         break;
 
     case os::SLEEP:
+    {
         int32_t time = millis();
         int32_t delta = time - thread.time;
         thread.delay -= delta;
@@ -143,6 +144,10 @@ void os::schedule_task(os::thread &thread)
             thread.time = 0;
             thread.func();
         }
+    }
+    break;
+
+    default:
         break;
     }
 

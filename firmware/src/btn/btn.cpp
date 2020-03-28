@@ -1,4 +1,4 @@
-#include <Button.h>
+#include <JC_Button.h>
 
 #include "btn.h"
 #include "../config/config.h"

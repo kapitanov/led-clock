@@ -14,7 +14,7 @@ extern AsyncMqttClient _mqtt;
 
 extern bool _tryConnect;
 
-extern StaticJsonBuffer<512> _json_buffer;
+extern StaticJsonDocument<512> _json;
 extern mqtt_event_handler* _handler;
 
 struct config_t
