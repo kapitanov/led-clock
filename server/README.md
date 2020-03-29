@@ -7,7 +7,7 @@ App is configured via environment variables:
 | Variable          | Default value  | Description                                        |
 | ----------------- | -------------- | -------------------------------------------------- |
 | `HTTP_ENDPOINT`   | `0.0.0.0:3000` | HTTP endpoint                                      |
-| `MQTT_EDNPOINT`   |                | MQTT broker endpoint (e.g. `tcp://localhost:1883)` |
+| `MQTT_ENDPOINT`   |                | MQTT broker endpoint (e.g. `tcp://localhost:1883)` |
 | `MQTT_USERNAME`   |                | MQTT broker login                                  |
 | `MQTT_PASSWORD`   |                | MQTT broker password                               |
 | `TIMEZONE`        | `UTC`          | Timezone for time provider                         |

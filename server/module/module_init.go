@@ -35,6 +35,7 @@ var (
 
 type initContextImpl struct {
 	module    *ModuleDefinition
+	publisher Publisher
 	log       *log.Logger
 	endpoints map[string]*EndpointDefinition
 }
@@ -45,22 +46,23 @@ func createInitContextImpl(module Interface, logger *log.Logger) (*initContextIm
 		return nil, ErrDuplicateModule
 	}
 
-	moduleDef := ModuleDefinition{
+	moduleDef := &ModuleDefinition{
 		Name:      module.Name(),
 		Module:    module,
 		Endpoints: make([]*EndpointDefinition, 0),
 	}
 
 	context := &initContextImpl{
-		module:    &moduleDef,
+		module:    moduleDef,
 		log:       logger,
+		publisher: &modulePublisherImpl{moduleDef, publisher},
 		endpoints: make(map[string]*EndpointDefinition),
 	}
 	return context, nil
 }
 
 func (c *initContextImpl) Publisher() Publisher {
-	return publisher
+	return c.publisher
 }
 
 func (c *initContextImpl) Log() *log.Logger {
@@ -99,4 +101,14 @@ func (c *initContextImpl) Register() {
 		c.module.Endpoints = append(c.module.Endpoints, endpoint)
 		endpointDefs[topic] = endpoint
 	}
+}
+
+type modulePublisherImpl struct {
+	module    *ModuleDefinition
+	publisher Publisher
+}
+
+func (p *modulePublisherImpl) Publish(topic string, message interface{}) {
+	topic = fmt.Sprintf("/%s/%s", p.module.Name, topic)
+	p.publisher.Publish(topic, message)
 }
