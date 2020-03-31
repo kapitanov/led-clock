@@ -2,7 +2,8 @@
 
 #include <Arduino.h>
 
-enum font_id {
+enum font_id
+{
     FONT_DEFAULT,
     FONT_MONOSPACE,
     FONT_SPECIAL
@@ -11,7 +12,8 @@ enum font_id {
 static const char FONT_SPECIAL_LINE = '0';
 static const char FONT_SPECIAL_BAR = '1';
 
-enum transition_type {
+enum transition_type
+{
     TRANSITION_NONE,
     TRANSITION_FADE_UP,
     TRANSITION_FADE_DOWN,
@@ -35,7 +37,7 @@ public:
     bool get(int x, int y);
     void set(int x, int y, boolean state);
     void intensity(int intensity);
-    void text(const char* str, font_id font = FONT_DEFAULT, int x = 0, int y = 0);
+    void text(const char *str, font_id font = FONT_DEFAULT, int x = 0, int y = 0);
     void clear();
     void fill();
 
@@ -50,9 +52,9 @@ private:
     int _pin_clk;
     int _count;
 
-    byte* _front_buffer;
-    byte* _back_buffer;
-    byte* _render_buffer;
+    byte *_front_buffer;
+    byte *_back_buffer;
+    byte *_render_buffer;
 
     void _set_scan_limit(int addr, int limit);
     bool _get_render_buffer(int x, int y);

@@ -1,125 +1,86 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <esp8266httpclient.h>
 
-#include "os/os.h"
+#include "rt/rt.h"
+#include "app/app.h"
 #include "ui/ui.h"
-#include "btn/btn.h"
-#include "cli/cli.h"
-#include "mqtt/mqtt.h"
+#include "config.h"
 
-class event_handler : public mqtt_event_handler
+#define CONFIG_BUTTON_PIN D8
+
+struct app_config
 {
-  private:
-    bool _has_time;
-    bool _has_weather;
-    bool _can_cycle = true;
+    char wifi_ssid[64];
+    char wifi_password[64];
 
-  public:
-    virtual void on_time(int h, int m)
-    {
-        ui_mode mode = ui_get_mode();
-        switch (mode)
-        {
-        case UI_LOADING:
-            ui_set_mode(UI_TIME);
-            break;
-        }
-
-        ui_set_time(h, m);
-        _has_time = true;
-    }
-
-    virtual void on_weather(float t)
-    {
-        ui_set_weather(t);
-        _has_weather = true;
-    }
-
-    virtual void on_error()
-    {
-        ui_set_mode(UI_LOADING);
-        _has_time = false;
-        _has_weather = false;
-    }
-
-    void on_btn_pressed(btn_cmd_t cmd)
-    {
-        switch (cmd)
-        {
-        case BTN_CLICK:
-            os::logf(F("Button pressed"));
-            if (!toggle_mode())
-            {
-                ui_set_mode(ui_get_mode());
-            }            
-            break;
-
-        case BTN_LONG_CLICK:
-            os::logf(F("Button long press detected, will now reboot"));
-            ESP.restart();
-            break;
-        }
-    }
-
-    void on_timer()
-    {
-        if (_can_cycle)
-        {
-            toggle_mode();
-        }
-    }
-
-  private:
-    bool toggle_mode()
-    {
-        ui_mode mode = ui_get_mode();
-        switch (mode)
-        {
-        case UI_TIME:
-            if (_has_weather)
-            {
-                ui_set_mode(UI_WEATHER);
-                return true;
-            }
-            os::logf(F("Can't switch mode to UI_WEATHER: no weather data is available"));
-            break;
-
-        case UI_WEATHER:
-            if (_has_time)
-            {
-                ui_set_mode(UI_TIME);
-                return true;
-            }
-            os::logf(F("Can't switch mode to UI_TIME: no time data is available"));
-            break;
-        }
-        
-        return false;
-    }
+    char mqtt_host[64];
+    int mqtt_port;
+    char mqtt_username[64];
+    char mqtt_password[64];
 };
 
-event_handler handler;
+app_config app_config_instance = {};
 
-void on_btn_pressed(btn_cmd_t cmd)
+void mqtt_callback(const rt_mqtt_event &event)
 {
-    handler.on_btn_pressed(cmd);
+    if (event.type == RT_MQTT_EVENT_CONNECTED)
+    {
+        rt_mqtt_subscribe("/time/update");
+        rt_mqtt_subscribe("/weather/update");
+        rt_mqtt_subscribe("/covid19/update");
+
+        rt_mqtt_publish("/time/request");
+        rt_mqtt_publish("/weather/request");
+        rt_mqtt_publish("/covid19/request");
+    }
+
+    app_on_mqtt_event(event);
 }
 
-void on_timer()
+void on_button_event(rt_button_event e)
 {
-    handler.on_timer();
-    os::set_delay(5 * 1000);
+    app_get_mode().on_button_event(e);
 }
+
+rt_button button(
+    on_button_event,
+    CONFIG_BUTTON_PIN,
+    CONFIG_BUTTON_PULLUP,
+    CONFIG_BUTTON_INVERT,
+    CONFIG_BUTTON_DEBOUNCE_MS,
+    CONFIG_BUTTON_LONG_PRESS);
 
 void setup()
 {
+    rt_init();
     ui_init();
-    btn_init(on_btn_pressed);
-    os::init(cli_handler);
-    mqtt_init(handler);
-    os::create_thread(on_timer, "ui_timer");
+    app_init();
+
+    if (!rt_config_read<app_config>(0, app_config_instance))
+    {
+        rt_log(F("Chip is not configured"));
+        return;
+    }
+
+    // Initialize WiFi
+    rt_logf(F("connecting to wifi: \"%s\" (password \"%s\")"), app_config_instance.wifi_ssid, app_config_instance.wifi_password);
+    WiFi.begin(app_config_instance.wifi_ssid, app_config_instance.wifi_password);
+    
+    WiFi.setAutoReconnect(true);
+    WiFi.setAutoConnect(true);
+
+    // Connect to MQTT
+    rt_mqtt_config mqtt_config;
+    mqtt_config.host = app_config_instance.mqtt_host;
+    mqtt_config.port = app_config_instance.mqtt_port;
+    mqtt_config.username = app_config_instance.mqtt_username;
+    mqtt_config.password = app_config_instance.mqtt_password;
+
+    rt_mqtt_connect(mqtt_config, mqtt_callback);
 }
 
 void loop()
 {
-    os::run();
+    rt_scheduler_loop();
 }
