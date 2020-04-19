@@ -129,7 +129,7 @@ func (m *moduleImpl) Update(force bool) (bool, error) {
 }
 
 func (m *moduleImpl) Query() (*stats, error) {
-	uri := fmt.Sprintf("https://corona.lmao.ninja/countries/%s", m.country)
+	uri := fmt.Sprintf("https://corona.lmao.ninja/v2/countries/%s", m.country)
 	resp, err := http.Get(uri)
 	if err != nil {
 		return nil, err
