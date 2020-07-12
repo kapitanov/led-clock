@@ -8,7 +8,7 @@ FROM golang:latest as build-yandex-weather-cli
 RUN CGO_ENABLED=0 go get -u github.com/msoap/yandex-weather-cli
 
 FROM alpine:latest
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates curl
 
 COPY --from=build-app /src/server /app/server
 COPY --from=build-app /src/www /app/www
